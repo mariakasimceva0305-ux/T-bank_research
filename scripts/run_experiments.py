@@ -55,6 +55,12 @@ def main() -> None:
     ap.add_argument("--steps", type=int, default=400)
     ap.add_argument("--capacity", type=int, default=128)
     ap.add_argument("--stages", default="main,rho,k")
+    # The reader is trained once and frozen, but the whole study rests on that
+    # one set of weights. Repeating the key comparison on independently trained
+    # readers separates "this retrieval rule wins" from "this reader happens to
+    # favour it".
+    ap.add_argument("--reader_seed", type=int, default=0)
+    ap.add_argument("--rules", default="")
     args = ap.parse_args()
 
     RESULTS.mkdir(exist_ok=True)
@@ -64,9 +70,10 @@ def main() -> None:
 
     jobs: list[tuple[str, str, float, int, int]] = []
     stages = args.stages.split(",")
+    rules = args.rules.split(",") if args.rules else RULES
     if "main" in stages:
         for rho in (1.0, 0.0):
-            for rule in RULES:
+            for rule in rules:
                 for seed in range(args.seeds):
                     jobs.append(("main", rule, rho, 4, seed))
     if "rho" in stages:
@@ -90,8 +97,9 @@ def main() -> None:
         for line in log.read_text(encoding="utf-8").splitlines():
             if line:
                 r = json.loads(line)
-                done.add((r["stage"], r["rule"], r["rho"], r["k"], r["seed"]))
-    todo = [j for j in jobs if j not in done]
+                done.add((r["stage"], r["rule"], r["rho"], r["k"], r["seed"],
+                          r.get("reader_seed", 0)))
+    todo = [j for j in jobs if j + (args.reader_seed,) not in done]
     print(f"{len(done)} runs already recorded, {len(todo)} to go")
 
     out = log.open("a", encoding="utf-8")
@@ -100,10 +108,11 @@ def main() -> None:
         res = run_stream(rule, reader, device, table, rho=rho, seed=seed,
                          steps=args.steps, k=k, capacity=args.capacity)
         row = res.summary()
-        row.update(stage=stage, mi_bits=mutual_information(rho))
+        row.update(stage=stage, mi_bits=mutual_information(rho),
+                   reader_seed=args.reader_seed)
         out.write(json.dumps(row) + "\n")
         out.flush()
-        if stage == "main" and k == 4:
+        if stage == "main" and k == 4 and args.reader_seed == 0:
             np.savez_compressed(
                 CURVES / f"{rule}_rho{rho:.2f}_seed{seed}.npz",
                 accuracy=res.accuracy, sufficient=res.sufficient,

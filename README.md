@@ -24,7 +24,7 @@ as a success — that is, one sufficient to determine the action.
 | similarity + MMR | 0.253 ± 0.049 | 0.514 | 0.160 ± 0.017 | 0.130 |
 | influence (KL magnitude) | 0.147 ± 0.035 | 0.806 | 0.170 ± 0.026 | **0.869** |
 | influence (IG) + merge | 0.146 ± 0.035 | 0.823 | 0.174 ± 0.024 | **0.861** |
-| **influence (IG) + merge + floor** | 0.249 ± 0.063 | 0.777 | **0.249 ± 0.045** | 0.672 |
+| influence (IG) + merge + floor | 0.249 ± 0.063 | 0.777 | 0.249 ± 0.045 | 0.672 |
 | oracle (same latent rule) | 0.326 ± 0.026 | 0.994 | 0.339 ± 0.051 | 0.984 |
 
 Three findings, in order of how much they change the picture.
@@ -33,28 +33,28 @@ Three findings, in order of how much they change the picture.
 about the rule (`rho = 0`) it finds a sufficient memory 7% of the time, against
 86% for the decision-based scores — the same rate as the oracle. That recall
 does not convert: 0.861 recall buys 0.174 accuracy, because the remaining slots
-fill with confident but irrelevant memories that the reader cannot arbitrate
-between (measured: 1.000 accuracy with no such distractor, 0.300 with three).
+fill with confident but irrelevant memories.
 
-**The budget is a ceiling, not a quota.** At `rho = 0` the decision-based rule
-peaks at `k = 2` (0.328) and halves by `k = 6` (0.147), while similarity creeps
-up with `k`. A score floor that leaves slots empty rather than filling them
-gives the best non-oracle result at `k = 4` — **0.249 against similarity's
-0.148**, paired difference +0.101, p = 0.013 — at *lower* recall than the
-version without it, and it flattens the budget curve entirely (0.249-0.273 from
-`k = 1` to `k = 6`). That is the direct test of the explanation: if the decay
-came from filling slots, forbidding the fill should remove it, and it does.
+**The accuracy advantage does not replicate across readers.** The reader was
+trained three times. At `rho = 0` the score-floor rule scores 0.249, 0.676 and
+0.135 — on the third reader it falls *below* similarity (0.138). Similarity
+itself is stable (0.148 / 0.145 / 0.138, half-range 0.005), and so is the recall
+of the decision-based scores (0.663-0.749 on every reader). What varies by a
+factor of five is the conversion from recall into decisions, and that is a
+property of the reader, not of the retrieval rule.
 
-A floor is available to a decision-level score and not to a description-level
-one. A cosine of 0.6 means nothing on its own; a score measured in nats of
-decision uncertainty removed makes "worth less than half the best candidate" a
-statement one can act on.
+| rule | rho | reader 0 | reader 1 | reader 2 | mean ± half-range |
+|---|---|---|---|---|---|
+| similarity | 0 | 0.148 | 0.145 | 0.138 | **0.144 ± 0.005** |
+| influence (IG) + merge | 0 | 0.174 | 0.202 | 0.132 | 0.169 ± 0.035 |
+| influence (IG) + floor | 0 | 0.249 | 0.676 | **0.135** | 0.353 ± **0.271** |
+| oracle | 0 | 0.339 | 0.675 | 0.530 | 0.515 ± 0.168 |
 
-**The advantage inverts, it does not merely vanish.** Across the coupling sweep
-similarity rises monotonically (0.148 → 0.361 as `I(c;r)` goes 0 → 3 bits) while
-the decision-based rules stay flat. They cross below one bit of mutual
-information, and at `rho = 1` similarity beats every decision-based rule and the
-oracle itself.
+**The instrument's variance exceeded the effect.** Environment seeds gave
+±0.03-0.05; reader seeds gave ±0.27. A study of this shape has to replicate the
+frozen model, not only the environment — a single-reader version of this
+repository produced statistically correct and substantively wrong conclusions,
+and section 6.1 of the report is preserved as that version.
 
 ![Main comparison](results/figures/main.png)
 
@@ -107,6 +107,12 @@ python -m scripts.probe_embeddings
 python -m scripts.probe_reader
 python -m scripts.run_experiments --seeds 5 --steps 400 --capacity 128
 python -m scripts.analyze
+
+# reader-seed replication (report section 6.2)
+for s in 1 2; do
+  python -m dam.train --steps 5000 --seed $s --out checkpoints/reader_s$s.pt
+  python -m scripts.run_experiments --checkpoint checkpoints/reader_s$s.pt       --reader_seed $s --seeds 5 --steps 400 --capacity 128 --stages main       --rules none,similarity,influence_ig,influence_ig_floor,oracle
+done
 ```
 
 ## Layout
