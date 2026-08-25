@@ -1,0 +1,65 @@
+{
+  "rho": 0.0,
+  "seed": 0,
+  "k": 4,
+  "capacity": 128,
+  "queries": 200,
+  "store_successes": 15,
+  "store_size": 128,
+  "none": {
+    "accuracy": 0.015,
+    "sufficient": 0.0
+  },
+  "recency": {
+    "accuracy": 0.06,
+    "sufficient": 0.3
+  },
+  "random": {
+    "accuracy": 0.125,
+    "sufficient": 0.07
+  },
+  "similarity": {
+    "accuracy": 0.115,
+    "sufficient": 0.025
+  },
+  "similarity_success": {
+    "accuracy": 0.135,
+    "sufficient": 0.48
+  },
+  "mmr": {
+    "accuracy": 0.155,
+    "sufficient": 0.08
+  },
+  "influence_kl": {
+    "accuracy": 0.275,
+    "sufficient": 0.865
+  },
+  "influence_ig_nodedup": {
+    "accuracy": 0.305,
+    "sufficient": 0.37
+  },
+  "influence_ig_nofloor": {
+    "accuracy": 0.415,
+    "sufficient": 0.845
+  },
+  "influence_ig": {
+    "accuracy": 0.17,
+    "sufficient": 0.845
+  },
+  "greedy_32": {
+    "accuracy": 0.25,
+    "sufficient": 0.25
+  },
+  "contrastive_32_2": {
+    "accuracy": 0.195,
+    "sufficient": 0.38
+  },
+  "contrastive_64_2": {
+    "accuracy": 0.26,
+    "sufficient": 0.515
+  },
+  "oracle": {
+    "accuracy": 0.865,
+    "sufficient": 0.865
+  }
+}

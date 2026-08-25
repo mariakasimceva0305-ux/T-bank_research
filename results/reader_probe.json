@@ -1,0 +1,13 @@
+{
+  "chance": 0.125,
+  "k": 4,
+  "n": 800,
+  "acc_solvable": 0.795,
+  "acc_matching": 0.13625,
+  "acc_unrelated": 0.0725,
+  "ig_match_ok": 1.6109222173690796,
+  "ig_match_bad": -0.00036054939031600954,
+  "ig_other_ok": 0.6828510875999928,
+  "ig_other_bad": -0.00035132110118865964,
+  "p_relevant_outranks_irrelevant": 0.845
+}

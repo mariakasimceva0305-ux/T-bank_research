@@ -1,0 +1,12 @@
+{
+  "probe_acc_marker": 0.9791666666666666,
+  "probe_acc_cluster": 1.0,
+  "nn1_same_marker": 0.385,
+  "nn1_same_cluster": 1.0,
+  "nn4_same_marker": 0.27925,
+  "nn4_same_cluster": 1.0,
+  "nn16_same_marker": 0.197875,
+  "nn16_same_cluster": 1.0,
+  "chance_same_marker": 0.125,
+  "chance_same_cluster": 0.125
+}
