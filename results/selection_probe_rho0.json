@@ -38,11 +38,11 @@
     "accuracy": 0.305,
     "sufficient": 0.37
   },
-  "influence_ig_nofloor": {
+  "influence_ig": {
     "accuracy": 0.415,
     "sufficient": 0.845
   },
-  "influence_ig": {
+  "influence_ig_floor": {
     "accuracy": 0.17,
     "sufficient": 0.845
   },
