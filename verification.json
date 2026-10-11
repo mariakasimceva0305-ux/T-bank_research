@@ -1,0 +1,10 @@
+{
+  "verified_on": "2026-10-11",
+  "checks": [
+    {
+      "project": "T-bank_research",
+      "command": "-m pytest -q",
+      "exit_code": 0
+    }
+  ]
+}

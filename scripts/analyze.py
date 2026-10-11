@@ -8,6 +8,7 @@ action-sampling randomness are shared across retrieval rules within a seed.
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +54,8 @@ def ci95(x: np.ndarray) -> tuple[float, float]:
 
 
 def group(rows: list[dict], key: str = "acc_tail") -> dict:
+    if len({r.get("reader_seed", 0) for r in rows}) > 1:
+        raise ValueError("Select one trained reader before aggregating environment seeds")
     out: dict[tuple, list[float]] = {}
     for r in rows:
         out.setdefault((r["rule"], r["rho"], r["k"]), []).append(r[key])
@@ -63,11 +66,17 @@ def paired_delta(rows: list[dict], rule: str, ref: str, rho: float, k: int,
                  key: str = "acc_tail") -> tuple[float, float, float]:
     """Mean paired difference rule - ref, its 95% half-width, and the p-value
     of a two-sided paired t-test over seeds."""
-    a = {r["seed"]: r[key] for r in rows if r["rule"] == rule
+    if len({r.get("reader_seed", 0) for r in rows}) > 1:
+        raise ValueError("Paired tests must be conditional on one reader")
+    a = {(r["stage"], r["seed"], r["capacity"], r["steps"]): r[key] for r in rows if r["rule"] == rule
          and r["rho"] == rho and r["k"] == k}
-    b = {r["seed"]: r[key] for r in rows if r["rule"] == ref
+    b = {(r["stage"], r["seed"], r["capacity"], r["steps"]): r[key] for r in rows if r["rule"] == ref
          and r["rho"] == rho and r["k"] == k}
-    seeds = sorted(set(a) & set(b))
+    if not a or not b:
+        return float("nan"), float("nan"), float("nan")
+    if set(a) != set(b):
+        raise ValueError("Unmatched experimental conditions in paired test")
+    seeds = sorted(a)
     d = np.array([a[s] - b[s] for s in seeds])
     m, h = ci95(d)
     p = float(stats.ttest_rel([a[s] for s in seeds], [b[s] for s in seeds]).pvalue)
@@ -213,19 +222,28 @@ def fig_curves() -> None:
 
 
 def main() -> None:
+    global FIGS
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--reader-seed", type=int, default=0)
+    args = parser.parse_args()
+    output = RESULTS / f"analysis_reader_{args.reader_seed}"
+    FIGS = output / "figures"
     FIGS.mkdir(parents=True, exist_ok=True)
-    rows = load()
-    text = ["## Main comparison (k = 4, capacity 128, 5 seeds)", "",
+    rows = [r for r in load() if r.get("reader_seed", 0) == args.reader_seed]
+    if not rows:
+        raise ValueError("No runs for selected reader")
+    text = [f"## Reader seed {args.reader_seed}: conditional intervals over environment seeds", "",
             table_main(rows), "", "## Coupling sweep", "",
             table_sweep(rows, "rho"), "", "## Budget sweep at rho = 0", "",
             table_sweep(rows, "k"), ""]
     out = "\n".join(text)
-    (RESULTS / "tables.md").write_text(out, encoding="utf-8")
+    (output / "tables.md").write_text(out, encoding="utf-8")
     print(out)
     fig_main(rows)
     fig_rho(rows)
     fig_k(rows)
-    fig_curves()
+    if args.reader_seed == 0:
+        fig_curves()
     print(f"figures written to {FIGS}")
 
 
